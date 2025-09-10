@@ -3,3 +3,4 @@ crewenv/
 secrets/
 googlesheets_utils.py
 gc_translate_utils.py
+__pycache__
