@@ -1,9 +1,9 @@
 import streamlit as st
+from gc_translate_utils import GCTranslateUtils
 
 
 st.set_page_config(
     page_title="Word Finder",
-    page_icon="🦜"
 )
 
 st.title("Welcome to Word Finder!")

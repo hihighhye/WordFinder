@@ -7,7 +7,7 @@ from googlesheets_utils import GooglesheetUtils
 def get_resource():
     googlesheet = GooglesheetUtils(spreadsheet_id='1hFNuCdmySJodQM5qsR5FJ6pkPLQc5DbXwP7h74pwTs8')
 
-    values = googlesheet.get_columns('Behave!B5:H439')
+    values = googlesheet.get_data('Behave!B5:H')
 
     vocab_df = pd.DataFrame(values)
     vocab_df.columns = ['Cat1', 'Cat2', 'Word', 'Pronunciation', 'Meaning', 'Note', 'Example']
@@ -16,16 +16,11 @@ def get_resource():
     return vocab_df
 
 st.set_page_config(
-    page_title="My Vocabulary",
-    page_icon="📒"
+    page_title="Word Finder - My Vocabulary",
 )
 
 st.title("My Vocabulary")
 
-with st.sidebar:
-    file = st.file_uploader("Upload a .csv or .xlsx file.", 
-                            type=["csv", "xlsx"]
-    )
 
 vocab_df = get_resource()
 table_columns = ['Star', 'Word', 'Pronunciation', 'Meaning', 'Note', 'Example']

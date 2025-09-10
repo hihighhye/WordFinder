@@ -12,8 +12,7 @@ def alert_validation():
 
 
 st.set_page_config(
-    page_title="Add New Words",
-    page_icon="🔍"
+    page_title="Word Finder - Add New Words",
 )
 
 st.title("Add New Words")
