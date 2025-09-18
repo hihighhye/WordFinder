@@ -4,15 +4,11 @@ from crewai import Crew, Agent, Task
 import json
 
 
-class Refined(BaseModel):
-    input: str
-    output: str
-
 class Word(BaseModel):
-        word: str
-        pronunciation: str
-        meaning_eng: str
-        meaning_native: str
+    word: str
+    pronunciation: str
+    meaning_eng: str
+    meaning_native: str
 
 class WordList(BaseModel):
     words: List[Word]
@@ -25,7 +21,7 @@ class WordsFinderCrew:
             role="Refining given words",
             goal="Change the form of given word/phrase so as to make it easier to find in the dictionary",
             backstory="""
-                Change the given word/phrase as a rule below.
+                Change the given word/phrase as rules below.
                 
                 All letters should be lowercases except for the case that it is the name of something.
                 ex) - input: Somatic / output: somatic
@@ -77,7 +73,7 @@ class WordsFinderCrew:
         )
 
         self.refining_word = Task(
-            description="Transform given word/phrase as a rule given: {word}",
+            description="Transform given word/phrase as given rules: {word}",
             agent=self.word_refiner,
             expected_output="A transformed word/phrase",
             # output_json=str,

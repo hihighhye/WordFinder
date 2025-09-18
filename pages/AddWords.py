@@ -53,7 +53,7 @@ wordsfinder_crew = create_wf_crew(st.session_state["native_lang"])
 
 found_words = []
 if "vocab_df" in st.session_state.keys():
-    found_words = [w.lower() for w in st.session_state["vocab_df"]["Word"]]
+    found_words = [w.lower() for w in st.session_state["vocab_df"]["word"]]
 
 placeholder = st.empty()
 with placeholder.form("add_words_form", enter_to_submit=False, clear_on_submit=True):
@@ -78,7 +78,7 @@ if submitted and check_validation(cat1, input_words):
 
         new_words = [w for w in refined_words if w.lower() not in found_words]
 
-        columns = ["Del", "Star", "Cat1", "Cat2", "Word", "Pronunciation", "Meaning", "Note", "Example"]
+        columns = ["del", "star", "cat1", "cat2", "word", "pronunciation", "meaning", "note", "example"]
         result_df = pd.DataFrame(columns=columns)
         for word in new_words:
             try:
