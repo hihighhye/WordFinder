@@ -15,66 +15,61 @@ def confirm_del():
             st.rerun()
 
 def edit_data():
-    vocab_table = st.session_state["vocab_table"]
     vocab_df = st.session_state["vocab_df"]
     updated_rows = st.session_state["updated_rows"]
+    edited_log = st.session_state["updated_log"]["edited_log"]
     
     for d_idx, content in updated_rows["edited_rows"].items():
         word = find_word(d_idx)
         w_idx = vocab_df[vocab_df["word"]==word].index[0]
 
         for column, val in content.items():
-            vocab_table.loc[d_idx, column] = val
-            if column == "del":
-                continue
             vocab_df.loc[w_idx, column] = val
-            
+
+            if column != "del":
+                if word not in edited_log.keys():
+                    edited_log[word] = dict()
+                edited_log[word][column] = val
+                 
     st.session_state["vocab_df"] = vocab_df
-    st.session_state["vocab_table"] = vocab_table
+    st.session_state["updated_log"]["edited_log"] = edited_log
 
 def save_data():
-    vocab_table = st.session_state["vocab_table"]
-    updated_rows = st.session_state["updated_rows"]
-    
-    for d_idx, content in updated_rows["edited_rows"].items():
-        word = vocab_table.loc[d_idx, "word"]
+    updated_log = st.session_state["updated_log"]
 
-        set_clause = ""
+    for word, content in updated_log["edited_log"].items():
+        set_clause = []
         for column, val in content.items():
-            if column == "del":
-                continue
-            set_clause += f"{column}={val} "
-        set_clause.strip()
+            if type(val) == str:
+                set_clause.append(f"{column}='{val}'") 
+            else:
+                set_clause.append(f"{column}={val}") 
+        set_clause = ", ".join(set_clause)
 
         db.update_data(word, set_clause)
 
-    st.toast("Saved!")
-
-def delete_words():
-    vocab_table = st.session_state["vocab_table"]
-    updated_rows = st.session_state["updated_rows"]
-    
-    del_words = []
-    for d_idx, content in updated_rows["edited_rows"].items():
-        word = vocab_table.loc[d_idx, "word"]
-   
-        for column, val in content.items():
-            if column == "del" and val == True:
-                del_words.append(f"'{word}'")
-                break
-    
+    del_words = updated_log["deleted_log"]
+    del_words = list(map(lambda x: f"'{x}'", del_words))
     del_words = ", ".join(del_words)
 
     db.delete_data(del_words)
-    st.toast("Deleted!")
 
-    vocab_df = db.get_data()
+    st.toast("Saved!")
+    st.session_state["updated_log"] = {"edited_log": dict(), "deleted_log": list()}
 
-    st.session_state["vocab_df"] = pd.DataFrame(vocab_df, columns=[
-        "cat1", "cat2", "word", "pronunciation", "meaning", 
-        "note", "example", "star", "search_date"]
-    )
+def delete_words():
+    vocab_table = st.session_state["vocab_table"]
+    vocab_df = st.session_state["vocab_df"]
+    deleted_log = st.session_state["updated_log"]["deleted_log"]
     
+    del_words = []
+    del_words = list(vocab_table[vocab_table["del"]==True]["word"])
+    deleted_log.extend(del_words)
+
+    st.session_state["updated_log"]["deleted_log"] = deleted_log
+    st.session_state["vocab_df"] = vocab_df[~vocab_df['word'].isin(del_words)].reset_index(drop=True)
+    st.toast("Deleted!")
+ 
 def find_word(d_idx):
     vocab_table = st.session_state["vocab_table"]
     return vocab_table.loc[d_idx, "word"]
@@ -87,9 +82,10 @@ st.title("My Vocabulary")
 
 
 vocab_df = st.session_state["vocab_df"]
+if "updated_log" not in st.session_state.keys():
+    st.session_state["updated_log"] = {"edited_log": dict(), "deleted_log": list()}
 
 vocab_df["cat2"] = vocab_df["cat2"].apply(lambda x: "Etc." if not x or x == "" else x)
-vocab_df["del"] = False
 
 table_columns = ["del", "star", "word", "pronunciation", "meaning", "note", "example"]
 

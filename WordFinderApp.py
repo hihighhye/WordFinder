@@ -34,7 +34,7 @@ def load_data():
     current_data = db.get_data()
     if not current_data:
         sample_vocab = get_resource()
-        init_date = date.today()
+        init_date = "2025-09-01" # date.today()
 
         records = []
         for row in sample_vocab.itertuples():
@@ -110,7 +110,9 @@ if "native_lang" not in st.session_state.keys():
     st.session_state["native_lang"] = "Korean"
 
 if "vocab_df" not in st.session_state.keys():
-    st.session_state["vocab_df"] = load_data()
+    vocab_df = load_data()
+    vocab_df["del"] = False
+    st.session_state["vocab_df"] = vocab_df
 
 pages = [
     st.Page("pages/Main.py", title="Main", icon=":material/home:"),

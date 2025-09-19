@@ -3,6 +3,8 @@ import re
 import pandas as pd
 from crews.wordsfinder_crew import WordsFinderCrew
 import time
+from datetime import date
+import database_utils as db
 
 
 @st.dialog("You're missing some fields to fill")
@@ -55,6 +57,7 @@ found_words = []
 if "vocab_df" in st.session_state.keys():
     found_words = [w.lower() for w in st.session_state["vocab_df"]["word"]]
 
+today = date.today()
 placeholder = st.empty()
 with placeholder.form("add_words_form", enter_to_submit=False, clear_on_submit=True):
     cat1 = st.text_input("*Category 1", key="cat1_field")
@@ -66,7 +69,7 @@ with placeholder.form("add_words_form", enter_to_submit=False, clear_on_submit=T
 
 if submitted and check_validation(cat1, input_words):
     placeholder.empty()  
-    with st.spinner("Searching the meaning of words..."):
+    with st.status("Searching the meaning of words...") as stat:
         if not cat2 or cat2.strip() == "":
             cat2 = "Etc."
         input_words = str_to_list(input_words)
@@ -78,43 +81,51 @@ if submitted and check_validation(cat1, input_words):
 
         new_words = [w for w in refined_words if w.lower() not in found_words]
 
-        columns = ["del", "star", "cat1", "cat2", "word", "pronunciation", "meaning", "note", "example"]
-        result_df = pd.DataFrame(columns=columns)
+        columns = ["cat1", "cat2", "word", "pronunciation", "meaning", "note", "example", "search_date"]
+        new_records = []
         for word in new_words:
             try:
+                stat.update(label=f"Searching the meaning of words...", state="running")
                 searched_word = wordsfinder_crew.search_words(word)
-                new_row = pd.DataFrame([
-                    [
-                        False, 
-                        0, 
+                new_row = (
                         cat1, 
                         cat2, 
                         searched_word["word"], 
                         searched_word["pronunciation"], 
                         searched_word["meaning_eng"], 
                         searched_word["meaning_native"], 
-                        ""
-                    ]], columns=columns
-                )
-                result_df = pd.concat([result_df, new_row], axis=0)
+                        "",
+                        today,
+                )    
+                new_records.append(new_row)
                 st.toast(f"'{word}' is added.")
             except Exception:
-                new_row = pd.DataFrame([
-                    [
-                        False, 
-                        0,
+                stat.update(label=f"Failed to find the meaning of {word}", state="error")
+                new_row = (
                         cat1, 
                         cat2, 
                         word, 
                         "", 
                         "Cannot find the meaning of the word.", 
                         "", 
-                        ""
-                ]], columns=columns
+                        "",
+                        today,
                 )
-                result_df = pd.concat([result_df, new_row], axis=0)
+                new_records.append(new_row)
 
-        st.session_state["vocab_df"] = pd.concat([st.session_state["vocab_df"], result_df], axis=0).reset_index(drop=True)
+        stat.update(label="Saving new words...", state="running")
+        db.insert_data(new_records)
+        current_data = db.get_data()
+
+        vocab_df = pd.DataFrame(current_data, columns=[
+            "cat1", "cat2", "word", "pronunciation", "meaning", 
+            "note", "example", "star", "search_date"]
+        )
+        vocab_df["del"] = False
+        st.session_state["vocab_df"] = vocab_df
+
+        stat.update(label="Successfully saved.", state="complete")
+        time.sleep(1)
     
     st.success("Now the words are available on My Vocabulary.")
     time.sleep(1)
