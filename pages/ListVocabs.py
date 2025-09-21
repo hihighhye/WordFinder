@@ -74,12 +74,12 @@ def find_word(d_idx):
     vocab_table = st.session_state["vocab_table"]
     return vocab_table.loc[d_idx, "word"]
 
+
 st.set_page_config(
     page_title="Word Finder - My Vocabulary",
 )
 
 st.title("My Vocabulary")
-
 
 vocab_df = st.session_state["vocab_df"]
 if "updated_log" not in st.session_state.keys():
@@ -98,7 +98,7 @@ if selected_cat1:
     
     cat2_list = vocab_table["cat2"].value_counts()
     cat2_options = sorted(list(cat2_list.index))
-    selected_cat2 = st.segmented_control("Category 2", options=cat2_options, format_func=lambda option: option + f" ({cat2_list[option]})", selection_mode="multi", width="stretch")
+    selected_cat2 = st.pills("Category 2", options=cat2_options, format_func=lambda option: option + f" ({cat2_list[option]})", selection_mode="multi")
 
     if selected_cat2:
         vocab_table = vocab_table[vocab_table["cat2"].isin(selected_cat2)].reset_index(drop=True)

@@ -59,7 +59,7 @@ if "vocab_df" in st.session_state.keys():
 
 today = date.today()
 placeholder = st.empty()
-with placeholder.form("add_words_form", enter_to_submit=False, clear_on_submit=True):
+with placeholder.form("add_words_form", enter_to_submit=True, clear_on_submit=True):
     cat1 = st.text_input("*Category 1", key="cat1_field")
     cat2 = st.text_input("Category 2 (Optional)", key="cat2_field")
 

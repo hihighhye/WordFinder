@@ -118,6 +118,8 @@ pages = [
     st.Page("pages/Main.py", title="Main", icon=":material/home:"),
     st.Page("pages/ListVocabs.py", title="My Vocabulary", icon=":material/hive:"),
     st.Page("pages/AddWords.py", title="Add New Words", icon=":material/list_alt_add:"),
+    st.Page("pages/Translator.py", title="Translator", icon=":material/convert_to_text:"),
+    st.Page("pages/Quiz.py", title="Quiz", icon=":material/crossword:"),
 ]
 
 pg = st.navigation(pages)
