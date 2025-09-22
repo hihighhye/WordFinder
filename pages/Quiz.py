@@ -11,6 +11,7 @@ def select_cat1():
         "Category 1", 
         options=cat1_options, 
         format_func=lambda option: option + f" ({len(today_words)})" if option == "Today" else option + f" ({cat1_list[option]})", 
+        width=300,
     )
 
 def select_cat2(selected_cat1):   
@@ -22,6 +23,7 @@ def select_cat2(selected_cat1):
         "Category 2", 
         options=cat2_options, 
         format_func=lambda option: option + f" ({cat2_list[option]})" if option in cat2_list.index else option, 
+        width=300,
     )
 
 st.set_page_config(
@@ -36,7 +38,7 @@ vocab_df["cat2"] = vocab_df["cat2"].apply(lambda x: "Etc." if not x or x == "" e
 today = datetime.strftime(date.today(), "%Y-%m-%d")
 today_words = vocab_df[vocab_df["search_date"]==today].reset_index(drop=True)
 
-table_columns = ["star", "word", "pronunciation", "meaning", "note", "example"]
+table_columns = ["star", "word", "pronunciation", "meaning", "note", "example", "img"]
 placeholder = st.empty()
 
 if "shuffled_vocab_table" not in st.session_state.keys():
@@ -89,6 +91,7 @@ else:
               
                 left.title(cur_row["word"])
                 left.text(cur_row['pronunciation'])
+                right.image(cur_row["img"])
 
                 help = st.toggle("help")
                 if help:

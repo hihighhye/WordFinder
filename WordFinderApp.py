@@ -3,6 +3,7 @@ import database_utils as db
 from googlesheets_utils import GooglesheetUtils
 from datetime import date
 import pandas as pd
+from crews.wordsfinder_crew import WordsFinderCrew
 
 
 @st.dialog("Settings")
@@ -34,20 +35,28 @@ def load_data():
     current_data = db.get_data()
     if not current_data:
         sample_vocab = get_resource()
+        sample_vocab = sample_vocab.sample(frac=1, random_state=42).reset_index(drop=True)
+        sample_vocab = sample_vocab[:30]
         init_date = "2025-09-01" # date.today()
 
         records = []
         for row in sample_vocab.itertuples():
             row = row[1:]
-            records.append((*row, init_date))
+            records.append((*row, '', init_date))
         db.insert_data(records)
         current_data = db.get_data()
 
     vocab_df = pd.DataFrame(current_data, columns=[
         "cat1", "cat2", "word", "pronunciation", "meaning", 
-        "note", "example", "star", "search_date"]
+        "note", "example", "star", "img", "search_date"]
     )
     return vocab_df
+
+@st.cache_resource()
+def create_wf_crew(native_lang):
+    st.session_state["wordfinder_crew"] = WordsFinderCrew(native_lang=native_lang)
+    print("Created new WF Crew!")
+    return st.session_state["wordfinder_crew"]
 
 st.session_state["lang_options"] = [
     "Korean",
@@ -111,13 +120,15 @@ if "native_lang" not in st.session_state.keys():
 
 if "vocab_df" not in st.session_state.keys():
     vocab_df = load_data()
-    vocab_df["del"] = False
     st.session_state["vocab_df"] = vocab_df
+
+wordfinder_crew = create_wf_crew(st.session_state["native_lang"])
+st.session_state["wordfinder_crew"] = wordfinder_crew
 
 pages = [
     st.Page("pages/Main.py", title="Main", icon=":material/home:"),
-    st.Page("pages/ListVocabs.py", title="My Vocabulary", icon=":material/hive:"),
     st.Page("pages/AddWords.py", title="Add New Words", icon=":material/list_alt_add:"),
+    st.Page("pages/ListVocabs.py", title="My Vocabulary", icon=":material/hive:"),
     st.Page("pages/Translator.py", title="Translator", icon=":material/convert_to_text:"),
     st.Page("pages/Quiz.py", title="Quiz", icon=":material/crossword:"),
 ]

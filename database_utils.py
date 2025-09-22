@@ -16,6 +16,7 @@ def initialize_db():
             note text,
             example text default '',
             star integer default 0,
+            img text null,
             search_date date not null
         );
     """)
@@ -27,7 +28,7 @@ def get_data():
     cur = con.cursor()
 
     res = cur.execute("""
-        SELECT cat1, cat2, word, pronunciation, meaning, note, example, star, search_date FROM MyVocab;
+        SELECT cat1, cat2, word, pronunciation, meaning, note, example, star, img, search_date FROM MyVocab;
     """)
     return res.fetchall()
 
@@ -37,8 +38,8 @@ def insert_data(records):
 
     cur.execute("BEGIN TRANSACTION;")
     stmt = """
-            INSERT INTO MyVocab(cat1, cat2, word, pronunciation, meaning, note, example, search_date) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+            INSERT INTO MyVocab(cat1, cat2, word, pronunciation, meaning, note, example, img, search_date) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
         """
     cur.executemany(stmt, records)
     

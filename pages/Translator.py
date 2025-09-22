@@ -17,10 +17,14 @@ st.title("Sentence Translator")
 native_lang = st.session_state["native_lang"]
 translator_crew = create_translator_crew()
 
-lang_mode = st.selectbox("Depart Language", (
-    f"English to {native_lang}",
-    f"{native_lang} to English"
-))
+lang_mode = st.selectbox(
+    "Depart Language", 
+    (
+        f"English to {native_lang}",
+        f"{native_lang} to English"
+    ),
+    width=300,
+)
 
 depart_lang = "English"
 destin_lang = native_lang

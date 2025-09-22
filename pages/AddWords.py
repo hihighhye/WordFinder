@@ -1,7 +1,6 @@
 import streamlit as st
 import re
 import pandas as pd
-from crews.wordsfinder_crew import WordsFinderCrew
 import time
 from datetime import date
 import database_utils as db
@@ -26,12 +25,6 @@ def check_validation(cat1, input_words):
             return False    
     return True
 
-@st.cache_resource()
-def create_wf_crew(native_lang):
-    st.session_state["wordfinder_crew"] = WordsFinderCrew(native_lang=native_lang)
-    print("Created new WF Crew!")
-    return st.session_state["wordfinder_crew"]
-
 def str_to_list(words):
     words = words.strip()
     words = re.sub(r'[ \t\r\f\v]{2,}', ' ', words)
@@ -51,7 +44,7 @@ st.markdown("""
 """)
 
 
-wordsfinder_crew = create_wf_crew(st.session_state["native_lang"])
+wordsfinder_crew = st.session_state["wordfinder_crew"] if "wordfinder_crew" in st.session_state else None
 
 found_words = []
 if "vocab_df" in st.session_state.keys():
@@ -81,7 +74,7 @@ if submitted and check_validation(cat1, input_words):
 
         new_words = [w for w in refined_words if w.lower() not in found_words]
 
-        columns = ["cat1", "cat2", "word", "pronunciation", "meaning", "note", "example", "search_date"]
+        columns = ["cat1", "cat2", "word", "pronunciation", "meaning", "note", "example", "star", "img", "search_date"]
         new_records = []
         for word in new_words:
             try:
@@ -95,6 +88,7 @@ if submitted and check_validation(cat1, input_words):
                         searched_word["meaning_eng"], 
                         searched_word["meaning_native"], 
                         "",
+                        searched_word["img"],
                         today,
                 )    
                 new_records.append(new_row)
@@ -109,19 +103,19 @@ if submitted and check_validation(cat1, input_words):
                         "Cannot find the meaning of the word.", 
                         "", 
                         "",
+                        "",
                         today,
                 )
                 new_records.append(new_row)
 
         stat.update(label="Saving new words...", state="running")
-        db.insert_data(new_records)
+        try:
+            db.insert_data(new_records)
+        except:
+            st.error("Failed to save words. Try again.")
         current_data = db.get_data()
 
-        vocab_df = pd.DataFrame(current_data, columns=[
-            "cat1", "cat2", "word", "pronunciation", "meaning", 
-            "note", "example", "star", "search_date"]
-        )
-        vocab_df["del"] = False
+        vocab_df = pd.DataFrame(current_data, columns=columns)
         st.session_state["vocab_df"] = vocab_df
 
         stat.update(label="Successfully saved.", state="complete")
