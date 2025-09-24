@@ -21,10 +21,14 @@ def set_up():
         st.session_state["lang_options"],
     )
 
-    image_on = st.toggle("Visualize words (experimental)", value=False, disabled=True)
+    image_on = st.toggle(
+        "Visualize words (experimental)", 
+        value=st.session_state["image_on"] if "image_on" in st.session_state else False,
+        disabled=True
+    )
 
     if st.button("save"):
-        st.session_state["user_openai_api_key"] = user_openai_api_key.strip()
+        st.session_state["user_openai_api_key"] = user_openai_api_key.strip() if user_openai_api_key else None
         st.session_state["native_lang"] = native_lang
         st.session_state["image_on"] = image_on
         st.cache_resource.clear()
@@ -72,14 +76,16 @@ def load_data():
     return vocab_df
 
 @st.cache_resource()
-def create_wf_crew(openai_api_key, native_lang):
-    st.session_state["wordfinder_crew"] = WordsFinderCrew(openai_api_key=openai_api_key, native_lang=native_lang)
+def create_wf_crew(native_lang): # openai_api_key, 
+    wf_crew = WordsFinderCrew(native_lang=native_lang) # openai_api_key=openai_api_key, 
     print("Created new WF Crew!")
+    return wf_crew
 
 @st.cache_resource()
-def create_translator_crew(openai_api_key):
-    st.session_state["translator_crew"] = TranslatorCrew(openai_api_key=openai_api_key)
+def create_translator_crew(): # openai_api_key
+    t_crew = TranslatorCrew() # openai_api_key=openai_api_key
     print("Created new Translator Crew!")
+    return t_crew
 
 
 st.session_state["lang_options"] = [
@@ -149,14 +155,20 @@ if "vocab_df" not in st.session_state.keys():
     vocab_df = load_data()
     st.session_state["vocab_df"] = vocab_df
 
-if "user_openai_api_key" in st.session_state:
-    try:
-        os.environ["OPENAI_API_KEY"] = st.session_state["user_openai_api_key"]
-        create_wf_crew(st.session_state["user_openai_api_key"], st.session_state["native_lang"])
-        create_translator_crew(st.session_state["user_openai_api_key"])
-    except:
-        alert_llm_setting_error()
-        st.session_state.pop("user_openai_api_key")
+# if "user_openai_api_key" in st.session_state:
+#     try:
+#         os.environ["OPENAI_API_KEY"] = st.session_state["user_openai_api_key"]
+#         create_wf_crew(st.session_state["user_openai_api_key"], st.session_state["native_lang"])
+#         create_translator_crew(st.session_state["user_openai_api_key"])
+#     except:
+#         alert_llm_setting_error()
+#         st.session_state.pop("user_openai_api_key")
+
+# os.environ["OPENAI_API_KEY"] = st.session_state["user_openai_api_key"]
+
+if "native_lang" in st.session_state.keys():
+    st.session_state["wordfinder_crew"] = create_wf_crew(st.session_state["native_lang"])  # st.session_state["user_openai_api_key"], 
+st.session_state["translator_crew"] = create_translator_crew()  # st.session_state["user_openai_api_key"], 
 
 pages = [
     st.Page("pages/Main.py", title="Main", icon=":material/home:"),

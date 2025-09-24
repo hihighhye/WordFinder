@@ -50,6 +50,8 @@ found_words = []
 if "vocab_df" in st.session_state.keys():
     found_words = [w.lower() for w in st.session_state["vocab_df"]["word"]]
 
+image_on = st.session_state["image_on"] if "image_on" in st.session_state.keys() else False
+
 today = date.today()
 placeholder = st.empty()
 with placeholder.form("add_words_form", enter_to_submit=True, clear_on_submit=True):
@@ -81,8 +83,9 @@ if submitted and check_validation(cat1, input_words):
                 stat.update(label=f"Searching the meaning of words...", state="running")
                 searched_word = wordsfinder_crew.search_words(word)
                 image = ""
-                if st.session_state["image_on"]:
+                if image_on:
                     image = wordsfinder_crew.search_image(word)
+
                 new_row = (
                         cat1, 
                         cat2, 

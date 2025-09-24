@@ -2,11 +2,13 @@ from pydantic import BaseModel
 from typing import List
 from crewai import Crew, Agent, Task, LLM
 import json
-from crewai_tools import SerperDevTool
+from crewai_tools import SerperDevTool, ScrapeElementFromWebsiteTool, ScrapeWebsiteTool
 import os
 
 
 search_tool = SerperDevTool()
+scrape_tool = ScrapeWebsiteTool()
+scrape_element_tool = ScrapeElementFromWebsiteTool()
 
 class Word(BaseModel):
     word: str
@@ -18,16 +20,16 @@ class WordList(BaseModel):
     words: List[Word]
 
 class WordsFinderCrew:
-    def __init__(self, openai_api_key, native_lang):  
-        os.environ['OPENAI_API_KEY'] = openai_api_key
+    def __init__(self, native_lang):  # openai_api_key, 
+        # os.environ['OPENAI_API_KEY'] = openai_api_key
         self.native_lang = native_lang
 
-        self.llm = LLM(
-            temperature=0.1,
-            model="gpt-4o",
-            streaming=True,
-            api_key=openai_api_key,
-        )
+        # self.llm = LLM(
+        #     temperature=0.1,
+        #     model="gpt-4o-mini",
+        #     streaming=True,
+        #     api_key=openai_api_key,
+        # )
 
         self.word_refiner = Agent(
             role="Refining given words",
@@ -55,7 +57,7 @@ class WordsFinderCrew:
             """,
             verbose=True,
             allow_delegation=False,
-            llm=self.llm,
+            # llm=self.llm,
         )
 
         self.meaning_searcher = Agent(
@@ -84,7 +86,7 @@ class WordsFinderCrew:
             """,
             verbose=True,
             allow_delegation=False,
-            llm=self.llm,
+            # llm=self.llm,
         )
 
         self.example_generator = Agent(
@@ -97,24 +99,27 @@ class WordsFinderCrew:
             """,
             verbose=True,
             allow_delegation=False,
-            llm=self.llm,
+            # llm=self.llm,
         )
 
         self.image_searcher = Agent(
-             role="Finding an image that represents given word/phrase well",
+             role="Finding an representitive image of given word/phrase",
             goal="Find an image that illustrates given word/phrase well on the Internet.",
             backstory="""
                 You are helping students who are learning English.
-                Return an image url which illustrates given word/phrase well by searching the internet with given tool.
+                Scrape an image url which illustrates given word/phrase well by searching the internet with given tool.
                 Make sure that the url must be a sort of type that is able to use as a parameter of streamlit.image(),
-                ending with one of proper extensions(ex. .jpg, .png, ...).
+                ending with one of **proper extensions(ex. .jpg, .png, ...)**.
+                ***And you MUST check if the url is valid, not showing errors like 404.***
             """,
             verbose=True,
             allow_delegation=False,
             tools=[
                 search_tool,
+                scrape_tool,
+                scrape_element_tool,
             ],
-            llm=self.llm,
+            # llm=self.llm,
         )
 
         self.refining_word = Task(
@@ -139,7 +144,7 @@ class WordsFinderCrew:
         )
 
         self.searching_image = Task(
-            description="Find an image that illustrates given word/phrase: {word}",
+            description="Find an representitive image of given word/phrase: {word}",
             agent=self.image_searcher,
             expected_output="An image URL",
         )
@@ -194,7 +199,7 @@ class WordsFinderCrew:
                 word=word,
             )
         )
-        return res
+        return res.raw
 
     def search_words(self, word):
         res = self.main_crew.kickoff(
@@ -203,7 +208,7 @@ class WordsFinderCrew:
                 word=word,
             )
         )
-        return json.loads(res)
+        return res.to_dict()
     
     def generate_example(self, word):
         res = self.example_crew.kickoff(
@@ -211,7 +216,7 @@ class WordsFinderCrew:
                 word=word,
             )
         )
-        return res
+        return res.raw
 
     def search_image(self, word):
         res = self.image_crew.kickoff(
@@ -219,7 +224,7 @@ class WordsFinderCrew:
                 word=word,
             )
         )
-        return res
+        return res.raw
     
 
     

@@ -5,15 +5,15 @@ import os
 
 
 class TranslatorCrew:
-    def __init__(self, openai_api_key):
-        os.environ['OPENAI_API_KEY'] = openai_api_key
+    def __init__(self):  # , openai_api_key
+        # os.environ['OPENAI_API_KEY'] = openai_api_key
 
-        self.llm = LLM(
-            temperature=0.1,
-            model="gpt-4o-mini",
-            streaming=True,
-            api_key=openai_api_key,
-        )
+        # self.llm = LLM(
+        #     temperature=0.1,
+        #     model="gpt-4o-mini",
+        #     streaming=True,
+        #     api_key=openai_api_key,
+        # )
 
         self.translator = Agent(
             role="Interpreter",
@@ -25,7 +25,7 @@ class TranslatorCrew:
             """,
             verbose=True,
             allow_delegation=False,
-            llm=self.llm,
+            # llm=self.llm,
         )
 
         self.translating = Task(
@@ -53,4 +53,4 @@ class TranslatorCrew:
                 phrase=phrase,
             )
         )
-        return result
+        return result.raw
