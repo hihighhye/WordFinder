@@ -91,8 +91,12 @@ else:
               
                 left.title(cur_row["word"])
                 left.text(cur_row['pronunciation'])
-                right.image(cur_row["img"])
-
+                
+                try:
+                    right.image(cur_row["img"])
+                except:
+                    pass
+                
                 help = st.toggle("help")
                 if help:
                     with st.container(border=True, width="stretch", height=150):

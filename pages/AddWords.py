@@ -63,8 +63,8 @@ with placeholder.form("add_words_form", enter_to_submit=True, clear_on_submit=Tr
 if submitted and check_validation(cat1, input_words):
     placeholder.empty()  
     with st.status("Searching the meaning of words...") as stat:
-        if not cat2 or cat2.strip() == "":
-            cat2 = "Etc."
+        if not cat2:
+            cat2 = ""
         input_words = str_to_list(input_words)
 
         refined_words = []
@@ -80,6 +80,9 @@ if submitted and check_validation(cat1, input_words):
             try:
                 stat.update(label=f"Searching the meaning of words...", state="running")
                 searched_word = wordsfinder_crew.search_words(word)
+                image = ""
+                if st.session_state["image_on"]:
+                    image = wordsfinder_crew.search_image(word)
                 new_row = (
                         cat1, 
                         cat2, 
@@ -87,8 +90,8 @@ if submitted and check_validation(cat1, input_words):
                         searched_word["pronunciation"], 
                         searched_word["meaning_eng"], 
                         searched_word["meaning_native"], 
-                        "",
-                        searched_word["img"],
+                        "", # example
+                        image,
                         today,
                 )    
                 new_records.append(new_row)
@@ -101,9 +104,9 @@ if submitted and check_validation(cat1, input_words):
                         word, 
                         "", 
                         "Cannot find the meaning of the word.", 
-                        "", 
-                        "",
-                        "",
+                        "", # note
+                        "", # example
+                        "", # image
                         today,
                 )
                 new_records.append(new_row)

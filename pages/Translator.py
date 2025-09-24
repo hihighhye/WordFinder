@@ -1,12 +1,5 @@
 import streamlit as st
-from crews.translator_crew import TranslatorCrew
 
-
-@st.cache_resource()
-def create_translator_crew():
-    st.session_state["translator_crew"] = TranslatorCrew()
-    print("Created new Translator Crew!")
-    return st.session_state["translator_crew"]
 
 st.set_page_config(
     page_title="Word Finder - Translator",
@@ -15,7 +8,9 @@ st.set_page_config(
 st.title("Sentence Translator")
 
 native_lang = st.session_state["native_lang"]
-translator_crew = create_translator_crew()
+
+
+translator_crew = st.session_state["translator_crew"] if "translator_crew" in st.session_state else None
 
 lang_mode = st.selectbox(
     "Depart Language", 

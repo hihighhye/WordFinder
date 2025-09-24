@@ -1,23 +1,33 @@
 from pydantic import BaseModel
 from typing import List
-from crewai import Crew, Agent, Task
+from crewai import Crew, Agent, Task, LLM
 import json
 from crewai_tools import SerperDevTool
+import os
 
+
+search_tool = SerperDevTool()
 
 class Word(BaseModel):
     word: str
     pronunciation: str
     meaning_eng: str
     meaning_native: str
-    img: str
 
 class WordList(BaseModel):
     words: List[Word]
 
 class WordsFinderCrew:
-    def __init__(self, native_lang):   
+    def __init__(self, openai_api_key, native_lang):  
+        os.environ['OPENAI_API_KEY'] = openai_api_key
         self.native_lang = native_lang
+
+        self.llm = LLM(
+            temperature=0.1,
+            model="gpt-4o",
+            streaming=True,
+            api_key=openai_api_key,
+        )
 
         self.word_refiner = Agent(
             role="Refining given words",
@@ -25,25 +35,27 @@ class WordsFinderCrew:
             backstory="""
                 Change the given word/phrase as rules below.
                 
-                All letters should be lowercases except for the case that it is the name of something.
+                1. All letters should be lowercases except for the case that it is the name of something.
                 ex) - input: Somatic / output: somatic
                     - input: Vulcan / output: Vulcan
 
-                If is is noun and given as a form of plural, return it as a form of singular.
+                2. If is is noun and given as a form of plural, return it as a form of singular.
                 ex) - input: mandalas / output: mandala
 
-                If is is verb and not written in the simple form of the verb, 
-                transform it to the simple form.
+                3. If is is verb and not written in the simple form of the verb, 
+                   transform it to the simple form.
                 ex) - input: reined / output: rein
                 But if the word has exceptional meaning as a given form, do not transform it.
                 ex) - input: stress-boggled / output: stress-boggled
 
-                Otherwise, the word shouldn't be transformed. Return the given word back.
-                If it is a phrase, use the phrase itself.(Do not cut words out.)
+                4. Otherwise, the word shouldn't be transformed. Return the given word back.
+                  If it is a phrase, use the phrase itself.(Do not cut words out.)
+                
                 **Make sure not to subtitute given word by the other.**
             """,
             verbose=True,
             allow_delegation=False,
+            llm=self.llm,
         )
 
         self.meaning_searcher = Agent(
@@ -63,23 +75,16 @@ class WordsFinderCrew:
                 - meaning(native) :
                     What the word means in native language
                     (in other words, how the word can translate in native language)
-                - image :
-                    The url of the image that illustrates the word well
-                    Find an image on the internet using search tool.
-                    **Make sure the url should end with one of proper extentions.(ex. .jpg, .png, ...)**
 
                 e.g.
                     - word : perseverate
                     - pronunciation : /pərˈsɛvəˌreɪt/
                     - meaning(English) : v. (perseverate-perseverated-perseverated) to repeat or prolong an action, thought, or utterance after the stimulus that prompted it has ceased.
                     - meaing(native) : 반복하다, 지속하다
-                    - img : https://www.publicationcoach.com/wp-content/uploads/2012/03/what-does-perseverate-mean-3-28-12.jpg
             """,
             verbose=True,
             allow_delegation=False,
-            tools=[
-                SerperDevTool(),
-            ]
+            llm=self.llm,
         )
 
         self.example_generator = Agent(
@@ -92,6 +97,24 @@ class WordsFinderCrew:
             """,
             verbose=True,
             allow_delegation=False,
+            llm=self.llm,
+        )
+
+        self.image_searcher = Agent(
+             role="Finding an image that represents given word/phrase well",
+            goal="Find an image that illustrates given word/phrase well on the Internet.",
+            backstory="""
+                You are helping students who are learning English.
+                Return an image url which illustrates given word/phrase well by searching the internet with given tool.
+                Make sure that the url must be a sort of type that is able to use as a parameter of streamlit.image(),
+                ending with one of proper extensions(ex. .jpg, .png, ...).
+            """,
+            verbose=True,
+            allow_delegation=False,
+            tools=[
+                search_tool,
+            ],
+            llm=self.llm,
         )
 
         self.refining_word = Task(
@@ -115,6 +138,12 @@ class WordsFinderCrew:
             # output_json=str,
         )
 
+        self.searching_image = Task(
+            description="Find an image that illustrates given word/phrase: {word}",
+            agent=self.image_searcher,
+            expected_output="An image URL",
+        )
+
         self.preprocess_crew = Crew(
             tasks=[
                 self.refining_word,
@@ -122,7 +151,7 @@ class WordsFinderCrew:
             agents=[
                 self.word_refiner,
             ],
-            verbose=2,
+            verbose=True,
             cache=True,
         )
 
@@ -133,7 +162,7 @@ class WordsFinderCrew:
             agents=[
                 self.meaning_searcher,
             ],
-            verbose=2,
+            verbose=True,
             cache=True,
         )
 
@@ -144,7 +173,18 @@ class WordsFinderCrew:
             agents=[
                 self.example_generator,
             ],
-            verbose=2,
+            verbose=True,
+            cache=True,
+        )
+
+        self.image_crew = Crew(
+            tasks=[
+                self.searching_image,
+            ],
+            agents=[
+                self.image_searcher,
+            ],
+            verbose=True,
             cache=True,
         )
 
@@ -167,6 +207,14 @@ class WordsFinderCrew:
     
     def generate_example(self, word):
         res = self.example_crew.kickoff(
+            inputs=dict(
+                word=word,
+            )
+        )
+        return res
+
+    def search_image(self, word):
+        res = self.image_crew.kickoff(
             inputs=dict(
                 word=word,
             )

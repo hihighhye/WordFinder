@@ -1,10 +1,20 @@
 from pydantic import BaseModel
-from crewai import Crew, Agent, Task
+from crewai import Crew, Agent, Task, LLM
 import json
+import os
 
 
 class TranslatorCrew:
-    def __init__(self):   
+    def __init__(self, openai_api_key):
+        os.environ['OPENAI_API_KEY'] = openai_api_key
+
+        self.llm = LLM(
+            temperature=0.1,
+            model="gpt-4o-mini",
+            streaming=True,
+            api_key=openai_api_key,
+        )
+
         self.translator = Agent(
             role="Interpreter",
             goal="Translate given {depart_lang} sentences or phrases in given {destin_lang} language.",
@@ -15,6 +25,7 @@ class TranslatorCrew:
             """,
             verbose=True,
             allow_delegation=False,
+            llm=self.llm,
         )
 
         self.translating = Task(
@@ -30,7 +41,7 @@ class TranslatorCrew:
             agents=[
                 self.translator,
             ],
-            verbose=2,
+            verbose=True,
             cache=True,
         )
 

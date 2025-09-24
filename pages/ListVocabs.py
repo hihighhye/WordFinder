@@ -125,12 +125,9 @@ try:
     )
 except:
     st.session_state.pop("list_cat1")
-    selected_cat1 = st.pills(
-        "Category 1", 
-        options=cat1_options, 
-        format_func=lambda option: option + f" ({cat1_list[option]})", 
-        selection_mode="multi",
-    )
+    save_data()
+    change_edit_mode(False)
+    st.rerun()
 
 if selected_cat1:
     st.session_state["list_cat1"] = selected_cat1
@@ -150,12 +147,9 @@ if selected_cat1:
         )
     except:
         st.session_state.pop("list_cat2")
-        selected_cat2 = st.pills(
-            "Category 2", 
-            options=cat2_options, 
-            format_func=lambda option: option + f" ({cat2_list[option]})", 
-            selection_mode="multi",
-        )
+        save_data()
+        change_edit_mode(False)
+        st.rerun()
 
     if selected_cat2:
         st.session_state["list_cat2"] = selected_cat2
