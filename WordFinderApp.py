@@ -1,6 +1,6 @@
 import streamlit as st
 import database_utils as db
-from googlesheets_utils import GooglesheetUtils
+# from googlesheets_utils import GooglesheetUtils
 from datetime import date
 import pandas as pd
 from crews.wordsfinder_crew import WordsFinderCrew
@@ -52,16 +52,16 @@ def set_up():
         else:
             st.error("Please enter valid OpenAI API key.")
 
-@st.cache_resource(show_spinner="Loading your vocab...")
-def get_resource():
-    googlesheet = GooglesheetUtils(spreadsheet_id="1hFNuCdmySJodQM5qsR5FJ6pkPLQc5DbXwP7h74pwTs8")
+# @st.cache_resource(show_spinner="Loading your vocab...")
+# def get_resource():
+#     googlesheet = GooglesheetUtils(spreadsheet_id="1hFNuCdmySJodQM5qsR5FJ6pkPLQc5DbXwP7h74pwTs8")
 
-    values = googlesheet.get_data("Behave!B5:H")
+#     values = googlesheet.get_data("Behave!B5:H")
 
-    vocab_df = pd.DataFrame(values)
-    vocab_df.columns = ["cat1", "cat2", "word", "pronunciation", "meaning", "note", "example"]
-    vocab_df = vocab_df.fillna("")
-    return vocab_df
+#     vocab_df = pd.DataFrame(values)
+#     vocab_df.columns = ["cat1", "cat2", "word", "pronunciation", "meaning", "note", "example"]
+#     vocab_df = vocab_df.fillna("")
+#     return vocab_df
 
 @st.cache_resource(show_spinner="Loading your vocab...")
 def load_data():
