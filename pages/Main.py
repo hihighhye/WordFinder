@@ -1,5 +1,4 @@
 import streamlit as st
-from gc_translate_utils import GCTranslateUtils
 from datetime import date
 
 
