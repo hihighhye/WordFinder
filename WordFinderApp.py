@@ -35,8 +35,9 @@ def set_up():
     )
 
     if st.button("save"):
-        user_openai_api_key = user_openai_api_key.strip()
         if user_openai_api_key:
+            user_openai_api_key = user_openai_api_key.strip()
+            
             try:
                 res = test_api_key_validation(user_openai_api_key)
         
