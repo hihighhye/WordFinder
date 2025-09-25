@@ -35,9 +35,8 @@ def set_up():
     )
 
     if st.button("save"):
-        if user_openai_api_key:
-            user_openai_api_key = user_openai_api_key.strip()
-            
+        user_openai_api_key = user_openai_api_key.strip() if user_openai_api_key else None
+        if user_openai_api_key:   
             try:
                 res = test_api_key_validation(user_openai_api_key)
         
@@ -54,6 +53,9 @@ def set_up():
 
         else:
             st.error("Please enter valid OpenAI API key.")
+            st.session_state.pop("user_openai_api_key", None)
+            st.session_state.pop("wordfinder_crew", None)
+            st.session_state.pop("translator_crew", None)
 
 # @st.cache_resource(show_spinner="Loading your vocab...")
 # def get_resource():
