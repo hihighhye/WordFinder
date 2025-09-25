@@ -48,6 +48,7 @@ def set_up():
             except Exception as e:
                 st.error("Please enter valid OpenAI API key.")
                 st.session_state.pop("user_openai_api_key", None)
+                st.cache_resource.clear()
 
         else:
             st.error("Please enter valid OpenAI API key.")
