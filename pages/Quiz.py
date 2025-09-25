@@ -56,7 +56,7 @@ if "shuffled_vocab_table" not in st.session_state.keys():
             vocab_table = vocab_df[(vocab_df["cat1"]==selected_cat1) & (vocab_df["cat2"]==selected_cat2)].reset_index(drop=True)
         
         vocab_table = vocab_table[table_columns]
-        shuffled_vocab_table = vocab_table.sample(frac=1, random_state=42).reset_index(drop=True)
+        shuffled_vocab_table = vocab_table.sample(frac=1).reset_index(drop=True)
 
         start = st.button("Start", type="primary", width=200, disabled=(selected_cat1 is None))
         if start:

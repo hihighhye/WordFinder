@@ -184,12 +184,17 @@ if selected_cat1:
             selection_mode="single-row",
         )
 
+        
         if len(event.selection["rows"]):
-            row_idx = event.selection["rows"][0]
-            word = vocab_table.loc[row_idx, "word"]
-            if st.button("generate example", type="primary"):
-                example = generate_example(word)
-                st.write(example)
+            if wordfinder_crew == None:
+                st.error("Set your OpenAI API key to generate examples.")
+            else:
+                row_idx = event.selection["rows"][0]
+                word = vocab_table.loc[row_idx, "word"]
+                if st.button("generate example", type="primary"):
+                    with st.spinner("Generating an example..."):
+                        example = generate_example(word)
+                        st.write(example)
 
     else:
         # placeholder.empty()

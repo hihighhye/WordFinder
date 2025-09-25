@@ -20,16 +20,10 @@ class WordList(BaseModel):
     words: List[Word]
 
 class WordsFinderCrew:
-    def __init__(self, native_lang):  # openai_api_key, 
-        # os.environ['OPENAI_API_KEY'] = openai_api_key
-        self.native_lang = native_lang
+    def __init__(self, openai_api_key, native_lang):  
+        os.environ['OPENAI_API_KEY'] = openai_api_key
 
-        # self.llm = LLM(
-        #     temperature=0.1,
-        #     model="gpt-4o-mini",
-        #     streaming=True,
-        #     api_key=openai_api_key,
-        # )
+        self.native_lang = native_lang
 
         self.word_refiner = Agent(
             role="Refining given words",
@@ -57,7 +51,6 @@ class WordsFinderCrew:
             """,
             verbose=True,
             allow_delegation=False,
-            # llm=self.llm,
         )
 
         self.meaning_searcher = Agent(
@@ -86,7 +79,6 @@ class WordsFinderCrew:
             """,
             verbose=True,
             allow_delegation=False,
-            # llm=self.llm,
         )
 
         self.example_generator = Agent(
@@ -99,7 +91,6 @@ class WordsFinderCrew:
             """,
             verbose=True,
             allow_delegation=False,
-            # llm=self.llm,
         )
 
         self.image_searcher = Agent(
@@ -119,7 +110,6 @@ class WordsFinderCrew:
                 scrape_tool,
                 scrape_element_tool,
             ],
-            # llm=self.llm,
         )
 
         self.refining_word = Task(
@@ -140,7 +130,6 @@ class WordsFinderCrew:
             description="Generate an example sentence with: {word}",
             agent=self.example_generator,
             expected_output="An example sentence involving given word/phrase",
-            # output_json=str,
         )
 
         self.searching_image = Task(

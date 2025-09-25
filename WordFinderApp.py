@@ -6,7 +6,14 @@ import pandas as pd
 from crews.wordsfinder_crew import WordsFinderCrew
 from crews.translator_crew import TranslatorCrew
 import os
+from openai import OpenAI
 
+
+def test_api_key_validation(openai_api_key):
+    return OpenAI(api_key=openai_api_key).chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[{"role":"user","content":"ping"}]
+    )
 
 @st.dialog("Settings")
 def set_up():
@@ -28,18 +35,22 @@ def set_up():
     )
 
     if st.button("save"):
-        st.session_state["user_openai_api_key"] = user_openai_api_key.strip() if user_openai_api_key else None
-        st.session_state["native_lang"] = native_lang
-        st.session_state["image_on"] = image_on
-        st.cache_resource.clear()
-        st.rerun()
+        user_openai_api_key = user_openai_api_key.strip()
+        if user_openai_api_key:
+            try:
+                res = test_api_key_validation(user_openai_api_key)
+        
+                st.session_state["user_openai_api_key"] = user_openai_api_key
+                st.session_state["native_lang"] = native_lang
+                st.session_state["image_on"] = image_on
+                st.cache_resource.clear()
+                st.rerun()
+            except Exception as e:
+                st.error("Please enter valid OpenAI API key.")
+                st.session_state.pop("user_openai_api_key", None)
 
-@st.dialog("OpenAI API Key Error")
-def alert_llm_setting_error():
-    st.write("""
-        You can use this app ONLY AFTER entering your OpenAI API Key.
-        Please check if your API Key are set correctly at Setting on sidebar.
-    """)
+        else:
+            st.error("Please enter valid OpenAI API key.")
 
 @st.cache_resource(show_spinner="Loading your vocab...")
 def get_resource():
@@ -56,18 +67,22 @@ def get_resource():
 def load_data():
     db.initialize_db()
     current_data = db.get_data()
-    if not current_data:
-        sample_vocab = get_resource()
-        sample_vocab = sample_vocab.sample(frac=1, random_state=42).reset_index(drop=True)
-        sample_vocab = sample_vocab[:30]
-        init_date = "2025-09-01" # date.today()
+    #############################################################################
+    # Load Sample Data
+    #############################################################################
+    # if not current_data:
+    #     sample_vocab = get_resource()
+    #     sample_vocab = sample_vocab.sample(frac=1, random_state=42).reset_index(drop=True)
+    #     sample_vocab = sample_vocab[:30]
+    #     init_date = "2025-09-01" # date.today()
 
-        records = []
-        for row in sample_vocab.itertuples():
-            row = row[1:]
-            records.append((*row, '', init_date)) # added img, search_date
-        db.insert_data(records)
-        current_data = db.get_data()
+    #     records = []
+    #     for row in sample_vocab.itertuples():
+    #         row = row[1:]
+    #         records.append((*row, '', init_date)) # added img, search_date
+    #     db.insert_data(records)
+    #     current_data = db.get_data()
+    ############################################################################
 
     vocab_df = pd.DataFrame(current_data, columns=[
         "cat1", "cat2", "word", "pronunciation", "meaning", 
@@ -76,14 +91,14 @@ def load_data():
     return vocab_df
 
 @st.cache_resource()
-def create_wf_crew(native_lang): # openai_api_key, 
-    wf_crew = WordsFinderCrew(native_lang=native_lang) # openai_api_key=openai_api_key, 
+def create_wf_crew(openai_api_key, native_lang): 
+    wf_crew = WordsFinderCrew(openai_api_key=openai_api_key, native_lang=native_lang)
     print("Created new WF Crew!")
     return wf_crew
 
 @st.cache_resource()
-def create_translator_crew(): # openai_api_key
-    t_crew = TranslatorCrew() # openai_api_key=openai_api_key
+def create_translator_crew(openai_api_key): 
+    t_crew = TranslatorCrew(openai_api_key=openai_api_key)
     print("Created new Translator Crew!")
     return t_crew
 
@@ -155,20 +170,11 @@ if "vocab_df" not in st.session_state.keys():
     vocab_df = load_data()
     st.session_state["vocab_df"] = vocab_df
 
-# if "user_openai_api_key" in st.session_state:
-#     try:
-#         os.environ["OPENAI_API_KEY"] = st.session_state["user_openai_api_key"]
-#         create_wf_crew(st.session_state["user_openai_api_key"], st.session_state["native_lang"])
-#         create_translator_crew(st.session_state["user_openai_api_key"])
-#     except:
-#         alert_llm_setting_error()
-#         st.session_state.pop("user_openai_api_key")
-
-# os.environ["OPENAI_API_KEY"] = st.session_state["user_openai_api_key"]
-
-if "native_lang" in st.session_state.keys():
-    st.session_state["wordfinder_crew"] = create_wf_crew(st.session_state["native_lang"])  # st.session_state["user_openai_api_key"], 
-st.session_state["translator_crew"] = create_translator_crew()  # st.session_state["user_openai_api_key"], 
+if "user_openai_api_key" in st.session_state and "native_lang" in st.session_state:
+    os.environ["OPENAI_API_KEY"] = st.session_state["user_openai_api_key"]
+    st.session_state["wordfinder_crew"] = create_wf_crew(st.session_state["user_openai_api_key"], st.session_state["native_lang"])
+    st.session_state["translator_crew"] = create_translator_crew(st.session_state["user_openai_api_key"], )
+   
 
 pages = [
     st.Page("pages/Main.py", title="Main", icon=":material/home:"),

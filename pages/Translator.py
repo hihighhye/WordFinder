@@ -31,6 +31,9 @@ if lang_mode == f"{native_lang} to English":
 sentence = st.text_area("Phrases/Sentences", key="sentence_field")
 
 if sentence:
-    with st.spinner("Translating..."):
-        res = translator_crew.translate(depart_lang, destin_lang, sentence)
-        st.markdown(res)
+    if translator_crew == None:
+        st.error("Set your OpenAI API key first to use translator.")
+    else:
+        with st.spinner("Translating..."):
+            res = translator_crew.translate(depart_lang, destin_lang, sentence)
+            st.markdown(res)
