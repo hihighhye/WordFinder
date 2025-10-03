@@ -2,7 +2,7 @@
 
 ## Summary
 
-> Personal Language Study-Aid Web Application that helps studying English. <br> \*_OpenAI API key is needed to use this App._
+> Personal Language Study-Aid Web Application that helps studying English. <br> \*_OpenAI API key is required to use this App._
 
 ## Main functions
 
