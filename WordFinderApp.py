@@ -91,7 +91,7 @@ def load_data():
 
     vocab_df = pd.DataFrame(current_data, columns=[
         "cat1", "cat2", "word", "pronunciation", "meaning", 
-        "synonym", "antonym" , "note", "example", "star", "img", "search_date"]
+        "note", "example", "star", "synonym", "antonym" , "img", "search_date"]
     )
     return vocab_df
 

@@ -13,11 +13,11 @@ def initialize_db():
             word text not null unique,
             pronunciation text,
             meaning text not null,
-            synonym text default '',
-            antonym text default '',
             note text,
             example text default '',
             star integer default 0,
+            synonym text default '',
+            antonym text default '',
             img text null,
             search_date date not null
         );
