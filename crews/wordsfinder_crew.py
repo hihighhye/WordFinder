@@ -15,6 +15,8 @@ class Word(BaseModel):
     pronunciation: str
     meaning_eng: str
     meaning_native: str
+    synonym: str
+    antonym: str
 
 class WordList(BaseModel):
     words: List[Word]
@@ -31,20 +33,14 @@ class WordsFinderCrew:
             backstory="""
                 Change the given word/phrase as rules below.
                 
-                1. All letters should be lowercases except for the case that it is the name of something.
+                1. All letters should be lowercases except for the case that it is an abbreviation.
                 ex) - input: Somatic / output: somatic
                     - input: Vulcan / output: Vulcan
 
                 2. If is is noun and given as a form of plural, return it as a form of singular.
                 ex) - input: mandalas / output: mandala
 
-                3. If is is verb and not written in the simple form of the verb, 
-                   transform it to the simple form.
-                ex) - input: reined / output: rein
-                But if the word has exceptional meaning as a given form, do not transform it.
-                ex) - input: stress-boggled / output: stress-boggled
-
-                4. Otherwise, the word shouldn't be transformed. Return the given word back.
+                3. Otherwise, the word shouldn't be transformed. Return the given word back.
                   If it is a phrase, use the phrase itself.(Do not cut words out.)
                 
                 **Make sure not to subtitute given word by the other.**
@@ -66,16 +62,25 @@ class WordsFinderCrew:
                 - meaning(English) : 
                     The meaning of given word in English dictionary
                     Each meaning should be provided with its grammatical category information(a./ad./v./n....).
-                    If the word is verb, add its conjugation(simple-past-past participle) at meaning section.
+                    If the word is a kind of transformation of verb, add its conjugation(simple-past-past participle) at meaning section.
+                    ex) word - reined / meaning(English): v. (rein-reined-reined) to control or limit something
                 - meaning(native) :
                     What the word means in native language
                     (in other words, how the word can translate in native language)
+                - synonym :
+                    The synonym of given word (Maximum 3, comma-separated list)
+                    Return '-' if you cannot find proper synonym.
+                - antonym :
+                    The antonym of given word (Maximum 3, comma-separated list)
+                    Return '-' if you cannot find proper synonym.
 
                 e.g.
                     - word : perseverate
                     - pronunciation : /pərˈsɛvəˌreɪt/
                     - meaning(English) : v. (perseverate-perseverated-perseverated) to repeat or prolong an action, thought, or utterance after the stimulus that prompted it has ceased.
                     - meaing(native) : 반복하다, 지속하다
+                    - synonym : repeat, obsess, ruminate
+                    - antonym : move on, let go, shift attention
             """,
             verbose=True,
             allow_delegation=False,

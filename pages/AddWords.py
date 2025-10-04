@@ -79,7 +79,7 @@ if submitted and check_validation(cat1, input_words):
 
             new_words = [w for w in refined_words if w.lower() not in found_words]
 
-            columns = ["cat1", "cat2", "word", "pronunciation", "meaning", "note", "example", "star", "img", "search_date"]
+            columns = ["cat1", "cat2", "word", "pronunciation", "meaning", "note", "example", "star", "synonym", "antonym", "img", "search_date"]
             new_records = []
             for word in new_words:
                 try:
@@ -97,6 +97,8 @@ if submitted and check_validation(cat1, input_words):
                             searched_word["meaning_eng"], 
                             searched_word["meaning_native"], 
                             "", # example
+                            searched_word["synonym"],
+                            searched_word["antonym"],
                             image,
                             today,
                     )    
@@ -112,6 +114,8 @@ if submitted and check_validation(cat1, input_words):
                             "Cannot find the meaning of the word.", 
                             "", # note
                             "", # example
+                            "", # synonym
+                            "", # antonym
                             "", # image
                             today,
                     )

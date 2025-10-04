@@ -13,6 +13,8 @@ def initialize_db():
             word text not null unique,
             pronunciation text,
             meaning text not null,
+            synonym text default '',
+            antonym text default '',
             note text,
             example text default '',
             star integer default 0,
@@ -28,7 +30,7 @@ def get_data():
     cur = con.cursor()
 
     res = cur.execute("""
-        SELECT cat1, cat2, word, pronunciation, meaning, note, example, star, img, search_date FROM MyVocab;
+        SELECT cat1, cat2, word, pronunciation, meaning, note, example, star, synonym, antonym, img, search_date FROM MyVocab;
     """)
     return res.fetchall()
 
@@ -38,8 +40,8 @@ def insert_data(records):
 
     cur.execute("BEGIN TRANSACTION;")
     stmt = """
-            INSERT INTO MyVocab(cat1, cat2, word, pronunciation, meaning, note, example, img, search_date) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+            INSERT INTO MyVocab(cat1, cat2, word, pronunciation, meaning, note, example, synonym, antonym, img, search_date) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
         """
     cur.executemany(stmt, records)
     

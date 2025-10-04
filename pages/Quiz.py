@@ -38,7 +38,7 @@ vocab_df["cat2"] = vocab_df["cat2"].apply(lambda x: "Etc." if not x or x == "" e
 today = datetime.strftime(date.today(), "%Y-%m-%d")
 today_words = vocab_df[vocab_df["search_date"]==today].reset_index(drop=True)
 
-table_columns = ["star", "word", "pronunciation", "meaning", "note", "example", "img"]
+table_columns = ["star", "word", "pronunciation", "meaning", "synonym", "antonym", "note", "example", "img"]
 placeholder = st.empty()
 
 if "shuffled_vocab_table" not in st.session_state.keys():
@@ -110,12 +110,17 @@ else:
                                     }
                                     </style>
                         """, unsafe_allow_html=True)
-                        st.markdown(f"""
-                                    <div class='meaning'>Meaning: <div>
-                                    <div class='meaning'>{cur_row['meaning']}</div>
-                                    <div class='note'>Note: </div>
-                                    <div class='note'>{cur_row['note']}</div>
+                        st.markdown(f"""<div class='meaning'>Meaning: <div>
+                                        <div class='meaning'>{cur_row['meaning']}</div><br>
                         """, unsafe_allow_html=True)
+
+                        with st.container(border=False):
+                            with st.container(border=False, horizontal=True):
+                                st.badge("Synonym", icon=":material/check:", color="yellow")
+                                st.markdown(f"{cur_row['synonym']}")
+                            with st.container(border=False, horizontal=True):
+                                st.badge("Antonym", icon=":material/check:", color="blue")
+                                st.markdown(f"{cur_row['antonym']}")
 
 
             with st.container(horizontal=True, horizontal_alignment="center"):
