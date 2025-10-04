@@ -1,6 +1,6 @@
 import streamlit as st
 import database_utils as db
-from googlesheets_utils import GooglesheetUtils
+# from googlesheets_utils import GooglesheetUtils
 from datetime import date
 import pandas as pd
 from crews.wordsfinder_crew import WordsFinderCrew
@@ -57,16 +57,16 @@ def set_up():
             st.session_state.pop("wordfinder_crew", None)
             st.session_state.pop("translator_crew", None)
 
-@st.cache_resource(show_spinner="Loading your vocab...")
-def get_resource():
-    googlesheet = GooglesheetUtils(spreadsheet_id="1hFNuCdmySJodQM5qsR5FJ6pkPLQc5DbXwP7h74pwTs8")
+# @st.cache_resource(show_spinner="Loading your vocab...")
+# def get_resource():
+#     googlesheet = GooglesheetUtils(spreadsheet_id="1hFNuCdmySJodQM5qsR5FJ6pkPLQc5DbXwP7h74pwTs8")
 
-    values = googlesheet.get_data("Behave!B5:H")
+#     values = googlesheet.get_data("Behave!B5:H")
 
-    vocab_df = pd.DataFrame(values)
-    vocab_df.columns = ["cat1", "cat2", "word", "pronunciation", "meaning", "note", "example"]
-    vocab_df = vocab_df.fillna("")
-    return vocab_df
+#     vocab_df = pd.DataFrame(values)
+#     vocab_df.columns = ["cat1", "cat2", "word", "pronunciation", "meaning", "note", "example"]
+#     vocab_df = vocab_df.fillna("")
+#     return vocab_df
 
 @st.cache_resource(show_spinner="Loading your vocab...")
 def load_data():
@@ -75,18 +75,18 @@ def load_data():
     #############################################################################
     # Load Sample Data
     #############################################################################
-    if not current_data:
-        sample_vocab = get_resource()
-        sample_vocab = sample_vocab.sample(frac=1, random_state=42).reset_index(drop=True)
-        sample_vocab = sample_vocab[:30]
-        init_date = "2025-10-01" # date.today()
+    # if not current_data:
+    #     sample_vocab = get_resource()
+    #     sample_vocab = sample_vocab.sample(frac=1, random_state=42).reset_index(drop=True)
+    #     sample_vocab = sample_vocab[:30]
+    #     init_date = "2025-10-01" # date.today()
 
-        records = []
-        for row in sample_vocab.itertuples():
-            row = row[1:]
-            records.append((*row, '', '', '', init_date)) # added synonym, antonym, img, search_date
-        db.insert_data(records)
-        current_data = db.get_data()
+    #     records = []
+    #     for row in sample_vocab.itertuples():
+    #         row = row[1:]
+    #         records.append((*row, '', '', '', init_date)) # added synonym, antonym, img, search_date
+    #     db.insert_data(records)
+    #     current_data = db.get_data()
     ############################################################################
 
     vocab_df = pd.DataFrame(current_data, columns=[
