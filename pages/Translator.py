@@ -1,5 +1,9 @@
 import streamlit as st
+import gc_translate_utils as gct
 
+
+def clear_sentence():
+    st.session_state.sentence_field = ""
 
 st.set_page_config(
     page_title="Word Finder - Translator",
@@ -7,10 +11,11 @@ st.set_page_config(
 
 st.title("Sentence Translator")
 
-native_lang = st.session_state["native_lang"]
 
-
-translator_crew = st.session_state["translator_crew"] if "translator_crew" in st.session_state else None
+# translator_crew = st.session_state["translator_crew"] if "translator_crew" in st.session_state else None
+translator = gct.GCTranslateUtils()
+lang_idx = [lang.language_code for lang in translator.get_supported_languages()].index(st.session_state["native_lang_code"]) if "native_lang_code" in st.session_state else 0
+native_lang = [lang.display_name for lang in translator.get_supported_languages()][lang_idx]
 
 lang_mode = st.selectbox(
     "Depart Language", 
@@ -19,21 +24,21 @@ lang_mode = st.selectbox(
         f"{native_lang} to English"
     ),
     width=300,
+    on_change=clear_sentence,
 )
 
-depart_lang = "English"
-destin_lang = native_lang
-
+src_lang_code = "en"
+tgt_lang_code = st.session_state["native_lang_code"]
 if lang_mode == f"{native_lang} to English":
-    depart_lang = native_lang
-    destin_lang = "English"
+    src_lang_code = st.session_state["native_lang_code"]
+    tgt_lang_code = "en"
 
 sentence = st.text_area("Phrases/Sentences", key="sentence_field")
 
 if sentence:
-    if translator_crew == None:
-        st.error("Set your OpenAI API key first to use translator.")
+    if translator == None:
+        st.error("Set your native language first to use translator.")
     else:
         with st.spinner("Translating..."):
-            res = translator_crew.translate(depart_lang, destin_lang, sentence)
+            res = translator.translateText(sentence, src_lang_code=src_lang_code, tgt_lang_code=tgt_lang_code)
             st.markdown(res)
