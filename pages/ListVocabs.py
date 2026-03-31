@@ -97,6 +97,9 @@ st.set_page_config(
     page_title="Word Finder - My Vocabulary",
 )
 
+if "shuffled_vocab_table" in st.session_state:
+    st.session_state.pop("shuffled_vocab_table")
+
 st.title("My Vocabulary")
 
 if "updated_log" not in st.session_state.keys():
@@ -110,7 +113,7 @@ vocab_df["cat2"] = vocab_df["cat2"].apply(lambda x: "Etc." if not x or x == "" e
 
 wordfinder_crew = st.session_state["wordfinder_crew"] if "wordfinder_crew" in st.session_state else None
 
-table_columns = ["star", "word", "pronunciation", "meaning", "note", "example"]
+table_columns = ["star", "word", "pronunciation", "meaning", "synonym", "antonym", "note", "example"]
 
 cat1_list = vocab_df["cat1"].value_counts()
 cat1_options = sorted(list(cat1_list.index))

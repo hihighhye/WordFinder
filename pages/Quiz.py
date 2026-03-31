@@ -93,7 +93,8 @@ else:
                 left.text(cur_row['pronunciation'])
                 
                 try:
-                    right.image(cur_row["img"])
+                    # print(cur_row["img"])
+                    right.image(cur_row["img"], width="stretch")
                 except:
                     pass
                 

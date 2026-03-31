@@ -39,6 +39,9 @@ st.set_page_config(
     page_title="Word Finder - Add New Words",
 )
 
+if "shuffled_vocab_table" in st.session_state:
+    st.session_state.pop("shuffled_vocab_table")
+
 st.title("Add New Words")
 
 st.markdown("""      
@@ -50,6 +53,8 @@ found_words = []
 if "vocab_df" in st.session_state.keys():
     found_words = [w.lower() for w in st.session_state["vocab_df"]["word"]]
 
+wordnik_api_key = st.secrets["wordnik_api_key"]
+pixabay_api_key = st.secrets["pixabay_api_key"]
 
 translator = gct.GCTranslateUtils()
 
@@ -82,33 +87,86 @@ if submitted and check_validation(cat1, input_words):
         columns = ["cat1", "cat2", "word", "pronunciation", "meaning", "note", "example", "star", "synonym", "antonym", "img", "search_date"]
         new_records = []
         for word in new_words:
+            meaning_native = translator.translateText(word)
             try:
                 stat.update(label=f"Searching the meaning of words...", state="running")
-                res = requests.get(f"https://api.dictionaryapi.dev/api/v2/entries/en/{word}")
-                searched_word = res.json()[0]
+                # res = requests.get(f"https://api.dictionaryapi.dev/api/v2/entries/en/{word}")
+                res = requests.get(f"https://api.wordnik.com/v4/word.json/{word}/definitions?limit=5&includeRelated=false&useCanonical=false&includeTags=false&api_key={wordnik_api_key}")
+                searched_word = res.json()
                 image = ""
                 # if image_on:
                 #     image = wordsfinder_crew.search_image(word)
 
+                image_res = requests.get(f"https://pixabay.com/api/?key={pixabay_api_key}&q={word}&image_type=photo")
+                try:
+                    image = image_res.json()["hits"][0]["webformatURL"]
+                    # print(image)
+                except Exception as e:
+                    print(e)
+
                 meaning_eng = ""
+                phonetic = ""
                 synonyms = ""
                 antonyms = ""
-                for meaning in searched_word["meanings"]:
-                    meaning_eng += meaning["partOfSpeech"] + ". "
-                    for defin in meaning["definitions"]:
-                        meaning_eng += defin["definition"] + " "
-                        if len(defin["synonyms"]) > 0:
-                            synonyms += ", ".join([s for s in defin["synonyms"]])
-                        if len(defin["antonyms"]) > 0:
-                            antonyms += ", ".join([s for s in defin["antonyms"]])
 
-                meaning_native = translator.translateText(searched_word["word"])
+                ################################################################################
+                # for meaning in searched_word["meanings"]:
+                #     meaning_eng += meaning["partOfSpeech"] + ". "
+                #     for defin in meaning["definitions"]:
+                #         meaning_eng += defin["definition"] + " "
+                #         if len(defin["synonyms"]) > 0:
+                #             synonyms += ", ".join([s for s in defin["synonyms"]])
+                #         if len(defin["antonyms"]) > 0:
+                #             antonyms += ", ".join([s for s in defin["antonyms"]])
+                ################################################################################
+
+                try:
+                    current_pos = ""
+                    for w_obj in searched_word:
+                        if "text" not in w_obj.keys():
+                            continue
+                        if "partOfSpeech" in w_obj.keys() and current_pos != w_obj["partOfSpeech"]:
+                            current_pos = w_obj["partOfSpeech"]
+                            meaning_eng += w_obj["partOfSpeech"] + ") " + w_obj["text"]
+                        elif "partOfSpeech" in w_obj.keys():
+                            meaning_eng += " // " + w_obj["text"]
+                        else:
+                            meaning_eng += " /// " + w_obj["text"]
+                    meaning_eng = re.sub(r'<[^>]+>', '', meaning_eng)
+                except:
+                    print("[Error-json check] ", searched_word)
+
+                res = requests.get(f"https://api.wordnik.com/v4/word.json/{word}/pronunciations?useCanonical=false&limit=10&api_key={wordnik_api_key}")
+                phonetics = res.json()
+
+                for data in phonetics:
+                    if "rawType" in data.keys() and data["rawType"] == "IPA":
+                        phonetic = data["raw"]
+                        break
+
+                if not phonetic:
+                    if "raw" in phonetics[0]:
+                        phonetic = phonetics[0]["raw"]
+
+                try:
+                    res = requests.get(f"https://api.wordnik.com/v4/word.json/{word}/relatedWords?useCanonical=false&relationshipTypes=synonym&limitPerRelationshipType=3&api_key={wordnik_api_key}")
+                    synonyms = res.json()[0]["words"]
+                    synonyms = ", ".join(synonyms)
+                except:
+                    pass
+        
+                try:
+                    res = requests.get(f"https://api.wordnik.com/v4/word.json/{word}/relatedWords?useCanonical=false&relationshipTypes=antonym&limitPerRelationshipType=3&api_key={wordnik_api_key}")
+                    antonyms = res.json()[0]["words"]
+                    antonyms = ", ".join(antonyms)
+                except:
+                    pass
 
                 new_row = (
                         cat1, 
                         cat2, 
-                        searched_word["word"], 
-                        searched_word["phonetic"], 
+                        searched_word[0]["word"], 
+                        phonetic, # searched_word["phonetic"], 
                         meaning_eng, 
                         meaning_native, 
                         "", # example
@@ -127,7 +185,7 @@ if submitted and check_validation(cat1, input_words):
                         word, 
                         "", 
                         "Cannot find the meaning of the word.", 
-                        "", # note
+                        meaning_native, # note
                         "", # example
                         "", # synonym
                         "", # antonym
@@ -152,4 +210,3 @@ if submitted and check_validation(cat1, input_words):
     st.success("Now the words are available on My Vocabulary.")
     time.sleep(1)
     st.rerun()    
-        

@@ -30,5 +30,5 @@ class GCTranslateUtils:
             target_language_code=tgt_lang_code,
         )
 
-        meaning_kr = ", ".join([t.translated_text for t in response.translations])
+        meaning_kr = "\n".join([t.translated_text for t in response.translations])
         return meaning_kr

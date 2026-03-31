@@ -3,19 +3,22 @@ import gc_translate_utils as gct
 
 
 def clear_sentence():
-    st.session_state.sentence_field = ""
+    st.session_state.sentence_field = None
 
 st.set_page_config(
     page_title="Word Finder - Translator",
 )
+
+if "shuffled_vocab_table" in st.session_state:
+    st.session_state.pop("shuffled_vocab_table")
 
 st.title("Sentence Translator")
 
 
 # translator_crew = st.session_state["translator_crew"] if "translator_crew" in st.session_state else None
 translator = gct.GCTranslateUtils()
-lang_idx = [lang.language_code for lang in translator.get_supported_languages()].index(st.session_state["native_lang_code"]) if "native_lang_code" in st.session_state else 0
-native_lang = [lang.display_name for lang in translator.get_supported_languages()][lang_idx]
+lang_idx = [lang.language_code for lang in st.session_state["lang_options"]].index(st.session_state["native_lang_code"]) if "native_lang_code" in st.session_state else 0
+native_lang = [lang.display_name for lang in st.session_state["lang_options"]][lang_idx]
 
 lang_mode = st.selectbox(
     "Depart Language", 
