@@ -5,3 +5,4 @@ googlesheets_utils.py
 gc_translate_utils.py
 __pycache__
 requirements_.txt
+.streamlit
