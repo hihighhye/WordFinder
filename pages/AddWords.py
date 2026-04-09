@@ -4,6 +4,8 @@ import pandas as pd
 import time
 from datetime import date
 import database_utils as db
+import gc_translate_utils as gct
+import requests
 
 
 @st.dialog("You're missing some fields to fill")
@@ -37,6 +39,9 @@ st.set_page_config(
     page_title="Word Finder - Add New Words",
 )
 
+if "shuffled_vocab_table" in st.session_state:
+    st.session_state.pop("shuffled_vocab_table")
+
 st.title("Add New Words")
 
 st.markdown("""      
@@ -44,13 +49,16 @@ st.markdown("""
 """)
 
 
-wordsfinder_crew = st.session_state["wordfinder_crew"] if "wordfinder_crew" in st.session_state else None
-
 found_words = []
 if "vocab_df" in st.session_state.keys():
     found_words = [w.lower() for w in st.session_state["vocab_df"]["word"]]
 
-image_on = st.session_state["image_on"] if "image_on" in st.session_state.keys() else False
+wordnik_api_key = st.secrets["wordnik_api_key"]
+pixabay_api_key = st.secrets["pixabay_api_key"]
+
+translator = gct.GCTranslateUtils()
+
+# image_on = st.session_state["image_on"] if "image_on" in st.session_state.keys() else False
 
 today = date.today()
 placeholder = st.empty()
@@ -63,78 +71,139 @@ with placeholder.form("add_words_form", enter_to_submit=True, clear_on_submit=Tr
     submitted = st.form_submit_button("Add")
 
 if submitted and check_validation(cat1, input_words):
-    if wordsfinder_crew == None:
-        st.error("Set your OpenAI API key first to add words.")
-    else:
-        placeholder.empty()  
-        with st.status("Searching the meaning of words...") as stat:
-            if not cat2:
-                cat2 = ""
-            input_words = str_to_list(input_words)
+    placeholder.empty()  
+    with st.status("Searching the meaning of words...") as stat:
+        if not cat2:
+            cat2 = ""
+        input_words = str_to_list(input_words)
 
-            refined_words = []
-            for word in input_words:
-                refined_word = wordsfinder_crew.preprocess(word)
-                refined_words.append(refined_word)
+        refined_words = input_words
 
-            new_words = [w for w in refined_words if w.lower() not in found_words]
+        new_words = [w for w in refined_words if w.lower() not in found_words]
 
-            columns = ["cat1", "cat2", "word", "pronunciation", "meaning", "note", "example", "star", "synonym", "antonym", "img", "search_date"]
-            new_records = []
-            for word in new_words:
-                try:
-                    stat.update(label=f"Searching the meaning of words...", state="running")
-                    searched_word = wordsfinder_crew.search_words(word)
-                    image = ""
-                    if image_on:
-                        image = wordsfinder_crew.search_image(word)
-
-                    new_row = (
-                            cat1, 
-                            cat2, 
-                            searched_word["word"], 
-                            searched_word["pronunciation"], 
-                            searched_word["meaning_eng"], 
-                            searched_word["meaning_native"], 
-                            "", # example
-                            searched_word["synonym"],
-                            searched_word["antonym"],
-                            image,
-                            today,
-                    )    
-                    new_records.append(new_row)
-                    st.toast(f"'{word}' is added.")
-                except Exception:
-                    stat.update(label=f"Failed to find the meaning of {word}", state="error")
-                    new_row = (
-                            cat1, 
-                            cat2, 
-                            word, 
-                            "", 
-                            "Cannot find the meaning of the word.", 
-                            "", # note
-                            "", # example
-                            "", # synonym
-                            "", # antonym
-                            "", # image
-                            today,
-                    )
-                    new_records.append(new_row)
-
-            stat.update(label="Saving new words...", state="running")
+        columns = ["cat1", "cat2", "word", "pronunciation", "meaning", "note", "example", "star", "synonym", "antonym", "img", "search_date"]
+        new_records = []
+        for word in new_words:
+            meaning_native = translator.translateText(word)
             try:
-                db.insert_data(new_records)
-            except:
-                st.error("Failed to save words. Try again.")
-            current_data = db.get_data()
+                stat.update(label=f"Searching the meaning of words...", state="running")
+                # res = requests.get(f"https://api.dictionaryapi.dev/api/v2/entries/en/{word}")
+                res = requests.get(f"https://api.wordnik.com/v4/word.json/{word}/definitions?limit=5&includeRelated=false&useCanonical=false&includeTags=false&api_key={wordnik_api_key}")
+                searched_word = res.json()
+                image = ""
+                # if image_on:
+                #     image = wordsfinder_crew.search_image(word)
 
-            vocab_df = pd.DataFrame(current_data, columns=columns)
-            st.session_state["vocab_df"] = vocab_df
+                image_res = requests.get(f"https://pixabay.com/api/?key={pixabay_api_key}&q={word}&image_type=photo")
+                try:
+                    image = image_res.json()["hits"][0]["webformatURL"]
+                    # print(image)
+                except Exception as e:
+                    print(e)
 
-            stat.update(label="Successfully saved.", state="complete")
-            time.sleep(1)
+                meaning_eng = ""
+                phonetic = ""
+                synonyms = ""
+                antonyms = ""
+
+                ################################################################################
+                # for meaning in searched_word["meanings"]:
+                #     meaning_eng += meaning["partOfSpeech"] + ". "
+                #     for defin in meaning["definitions"]:
+                #         meaning_eng += defin["definition"] + " "
+                #         if len(defin["synonyms"]) > 0:
+                #             synonyms += ", ".join([s for s in defin["synonyms"]])
+                #         if len(defin["antonyms"]) > 0:
+                #             antonyms += ", ".join([s for s in defin["antonyms"]])
+                ################################################################################
+
+                try:
+                    current_pos = ""
+                    for w_obj in searched_word:
+                        if "text" not in w_obj.keys():
+                            continue
+                        if "partOfSpeech" in w_obj.keys() and current_pos != w_obj["partOfSpeech"]:
+                            current_pos = w_obj["partOfSpeech"]
+                            meaning_eng += w_obj["partOfSpeech"] + ") " + w_obj["text"]
+                        elif "partOfSpeech" in w_obj.keys():
+                            meaning_eng += " // " + w_obj["text"]
+                        else:
+                            meaning_eng += " /// " + w_obj["text"]
+                    meaning_eng = re.sub(r'<[^>]+>', '', meaning_eng)
+                except:
+                    print("[Error-json check] ", searched_word)
+
+                res = requests.get(f"https://api.wordnik.com/v4/word.json/{word}/pronunciations?useCanonical=false&limit=10&api_key={wordnik_api_key}")
+                phonetics = res.json()
+
+                for data in phonetics:
+                    if "rawType" in data.keys() and data["rawType"] == "IPA":
+                        phonetic = data["raw"]
+                        break
+
+                if not phonetic:
+                    if "raw" in phonetics[0]:
+                        phonetic = phonetics[0]["raw"]
+
+                try:
+                    res = requests.get(f"https://api.wordnik.com/v4/word.json/{word}/relatedWords?useCanonical=false&relationshipTypes=synonym&limitPerRelationshipType=3&api_key={wordnik_api_key}")
+                    synonyms = res.json()[0]["words"]
+                    synonyms = ", ".join(synonyms)
+                except:
+                    pass
         
-        st.success("Now the words are available on My Vocabulary.")
+                try:
+                    res = requests.get(f"https://api.wordnik.com/v4/word.json/{word}/relatedWords?useCanonical=false&relationshipTypes=antonym&limitPerRelationshipType=3&api_key={wordnik_api_key}")
+                    antonyms = res.json()[0]["words"]
+                    antonyms = ", ".join(antonyms)
+                except:
+                    pass
+
+                new_row = (
+                        cat1, 
+                        cat2, 
+                        searched_word[0]["word"], 
+                        phonetic, # searched_word["phonetic"], 
+                        meaning_eng, 
+                        meaning_native, 
+                        "", # example
+                        synonyms,
+                        antonyms,
+                        image,
+                        today,
+                )    
+                new_records.append(new_row)
+                st.toast(f"'{word}' is added.")
+            except Exception:
+                stat.update(label=f"Failed to find the meaning of {word}", state="error")
+                new_row = (
+                        cat1, 
+                        cat2, 
+                        word, 
+                        "", 
+                        "Cannot find the meaning of the word.", 
+                        meaning_native, # note
+                        "", # example
+                        "", # synonym
+                        "", # antonym
+                        "", # image
+                        today,
+                )
+                new_records.append(new_row)
+
+        stat.update(label="Saving new words...", state="running")
+        try:
+            db.insert_data(new_records)
+        except:
+            st.error("Failed to save words. Try again.")
+        current_data = db.get_data()
+
+        vocab_df = pd.DataFrame(current_data, columns=columns)
+        st.session_state["vocab_df"] = vocab_df
+
+        stat.update(label="Successfully saved.", state="complete")
         time.sleep(1)
-        st.rerun()    
-        
+    
+    st.success("Now the words are available on My Vocabulary.")
+    time.sleep(1)
+    st.rerun()    

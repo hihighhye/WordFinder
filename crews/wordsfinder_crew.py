@@ -50,7 +50,7 @@ class WordsFinderCrew:
         )
 
         self.meaning_searcher = Agent(
-             role="Searching the meaning of words",
+            role="Searching the meaning of words",
             goal="Find the meaning of given words in English and given native language.",
             backstory="""
                 You are finding the meaning of English word in dictionaries for people studying English.
@@ -87,7 +87,7 @@ class WordsFinderCrew:
         )
 
         self.example_generator = Agent(
-             role="Generating an example sentence with given word/phrase",
+            role="Generating an example sentence with given word/phrase",
             goal="Generate an example sentence involving given word/phrase so that human can understand how the word is used in sentences.",
             backstory="""
                 You are helping students who are learning English.

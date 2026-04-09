@@ -9,6 +9,9 @@ st.set_page_config(
     page_title="Word Finder",
 )
 
+if "shuffled_vocab_table" in st.session_state:
+    st.session_state.pop("shuffled_vocab_table")
+
 st.title("Welcome to Word Finder!")
 
 st.markdown("""      

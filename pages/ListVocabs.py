@@ -1,6 +1,8 @@
 import streamlit as st
 import pandas as pd
 import database_utils as db
+from langchain_community.chat_models import ChatOpenAI
+from langchain.prompts import ChatPromptTemplate
 
 
 @st.dialog(":material/delete: Delete Confirmation")
@@ -89,13 +91,42 @@ def change_edit_mode(val):
 def set_background_color(_):
     return "font-weight: bold;"
 
+@st.cache_resource()
+def create_llm(openai_api_key):
+    llm = ChatOpenAI(
+            temperature=0.1,
+            model="gpt-4.1-nano-2025-04-14",
+            streaming=True,
+            api_key=openai_api_key
+        )
+    return llm
+
 def generate_example(word):
-    return wordfinder_crew.generate_example(word)
-    
+    llm = create_llm(st.session_state["user_openai_api_key"])
+    example_prompt = ChatPromptTemplate.from_messages([
+        (
+            "system",
+            """
+            You are helping students who are learning English.
+            Return a sentence which is involving given word/phrase below.
+            If the word is verb, you can transform it's tense.
+
+            Word/Phrase: {word}
+            """,
+        )
+    ])
+
+    example_chain = example_prompt | llm
+    return example_chain.invoke({"word": word})
+
 
 st.set_page_config(
     page_title="Word Finder - My Vocabulary",
 )
+
+
+if "shuffled_vocab_table" in st.session_state:
+    st.session_state.pop("shuffled_vocab_table")
 
 st.title("My Vocabulary")
 
@@ -108,9 +139,7 @@ if "edit_mode" not in st.session_state.keys():
 vocab_df = st.session_state["vocab_df"]
 vocab_df["cat2"] = vocab_df["cat2"].apply(lambda x: "Etc." if not x or x == "" else x)
 
-wordfinder_crew = st.session_state["wordfinder_crew"] if "wordfinder_crew" in st.session_state else None
-
-table_columns = ["star", "word", "pronunciation", "meaning", "note", "example"]
+table_columns = ["star", "word", "pronunciation", "meaning", "synonym", "antonym", "note", "example"]
 
 cat1_list = vocab_df["cat1"].value_counts()
 cat1_options = sorted(list(cat1_list.index))
@@ -183,10 +212,9 @@ if selected_cat1:
             on_select="rerun",
             selection_mode="single-row",
         )
-
-        
+    
         if len(event.selection["rows"]):
-            if wordfinder_crew == None:
+            if "user_openai_api_key" not in st.session_state:
                 st.error("Set your OpenAI API key to generate examples.")
             else:
                 row_idx = event.selection["rows"][0]
@@ -194,7 +222,7 @@ if selected_cat1:
                 if st.button("generate example", type="primary"):
                     with st.spinner("Generating an example..."):
                         example = generate_example(word)
-                        st.write(example)
+                        st.write(example.content)
 
     else:
         # placeholder.empty()

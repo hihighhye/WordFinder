@@ -7,6 +7,8 @@ from crews.wordsfinder_crew import WordsFinderCrew
 from crews.translator_crew import TranslatorCrew
 import os
 from openai import OpenAI
+import gc_translate_utils as gct
+from langchain.chat_models import ChatOpenAI
 
 
 def test_api_key_validation(openai_api_key):
@@ -15,24 +17,32 @@ def test_api_key_validation(openai_api_key):
         messages=[{"role":"user","content":"ping"}]
     )
 
+def get_display_name_by_lang_code(lang_code):
+    lang_idx = [lang.language_code for lang in st.session_state["lang_options"]].index(lang_code)
+    return st.session_state["lang_options"][lang_idx].display_name
+
 @st.dialog("Settings")
 def set_up():
     user_openai_api_key = st.text_input(
         "*Your OpenAI API key (Requirement)", 
         value=st.session_state["user_openai_api_key"] if "user_openai_api_key" in st.session_state else None
     )
+
+    default_lang_index = [lang.language_code for lang in st.session_state["lang_options"]].index(st.session_state["native_lang_code"]) if "native_lang_code" in st.session_state else ""
         
     target_lang = st.text_input("Language to learn", value="English", disabled=True)
-    native_lang = st.selectbox(
+    native_lang_code = st.selectbox(
         "Native language",
-        st.session_state["lang_options"],
+        options=[lang.language_code for lang in st.session_state["lang_options"]],
+        format_func=get_display_name_by_lang_code,
+        index=default_lang_index,
     )
 
-    image_on = st.toggle(
-        "Visualize words (experimental)", 
-        value=st.session_state["image_on"] if "image_on" in st.session_state else False,
-        disabled=True
-    )
+    # image_on = st.toggle(
+    #     "Visualize words (experimental)", 
+    #     value=st.session_state["image_on"] if "image_on" in st.session_state else False,
+    #     # disabled=True
+    # )
 
     if st.button("save"):
         user_openai_api_key = user_openai_api_key.strip() if user_openai_api_key else None
@@ -41,21 +51,17 @@ def set_up():
                 res = test_api_key_validation(user_openai_api_key)
         
                 st.session_state["user_openai_api_key"] = user_openai_api_key
-                st.session_state["native_lang"] = native_lang
-                st.session_state["image_on"] = image_on
+                st.session_state["native_lang_code"] = native_lang_code
+                # st.session_state["image_on"] = image_on
                 st.cache_resource.clear()
                 st.rerun()
             except Exception as e:
                 st.error("Please enter valid OpenAI API key.")
                 st.session_state.pop("user_openai_api_key", None)
-                st.session_state.pop("wordfinder_crew", None)
-                st.session_state.pop("translator_crew", None)
 
         else:
             st.error("Please enter valid OpenAI API key.")
             st.session_state.pop("user_openai_api_key", None)
-            st.session_state.pop("wordfinder_crew", None)
-            st.session_state.pop("translator_crew", None)
 
 # @st.cache_resource(show_spinner="Loading your vocab...")
 # def get_resource():
@@ -95,92 +101,80 @@ def load_data():
     )
     return vocab_df
 
-@st.cache_resource()
-def create_wf_crew(openai_api_key, native_lang): 
-    wf_crew = WordsFinderCrew(openai_api_key=openai_api_key, native_lang=native_lang)
-    print("Created new WF Crew!")
-    return wf_crew
+# st.session_state["lang_options"] = [
+#     "Korean",
+#     "Amharic",
+#     "Arabic",
+#     "Basque",
+#     "Bengali",
+#     "Portuguese (Brazil)",
+#     "Bulgarian",
+#     "Catalan",
+#     "Cherokee",
+#     "Croatian",
+#     "Czech",
+#     "Danish",
+#     "Dutch",
+#     "Estonian",
+#     "Filipino",
+#     "Finnish",
+#     "French",
+#     "German",
+#     "Greek",
+#     "Gujarati",
+#     "Hebrew",
+#     "Hindi",
+#     "Hungarian",
+#     "Icelandic",
+#     "Indonesian",
+#     "Italian",
+#     "Japanese",
+#     "Kannada",
+#     "Latvian",
+#     "Lithuanian",
+#     "Malay",
+#     "Malayalam",
+#     "Marathi",
+#     "Norwegian",
+#     "Polish",
+#     "Portuguese (Portugal)",
+#     "Romanian",
+#     "Russian",
+#     "Serbian",
+#     "Chinese (PRC)",
+#     "Slovak",
+#     "Slovenian",
+#     "Spanish",
+#     "Swahili",
+#     "Swedish",
+#     "Tamil",
+#     "Telugu",
+#     "Thai",
+#     "Chinese (Taiwan)",
+#     "Turkish",
+#     "Urdu",
+#     "Ukrainian",
+#     "Vietnamese",
+#     "Welsh"
+# ]
 
-@st.cache_resource()
-def create_translator_crew(openai_api_key): 
-    t_crew = TranslatorCrew(openai_api_key=openai_api_key)
-    print("Created new Translator Crew!")
-    return t_crew
 
+if "native_lang_code" not in st.session_state.keys():
+    st.session_state["native_lang_code"] = "ko"
 
-st.session_state["lang_options"] = [
-    "Korean",
-    "Amharic",
-    "Arabic",
-    "Basque",
-    "Bengali",
-    "Portuguese (Brazil)",
-    "Bulgarian",
-    "Catalan",
-    "Cherokee",
-    "Croatian",
-    "Czech",
-    "Danish",
-    "Dutch",
-    "Estonian",
-    "Filipino",
-    "Finnish",
-    "French",
-    "German",
-    "Greek",
-    "Gujarati",
-    "Hebrew",
-    "Hindi",
-    "Hungarian",
-    "Icelandic",
-    "Indonesian",
-    "Italian",
-    "Japanese",
-    "Kannada",
-    "Latvian",
-    "Lithuanian",
-    "Malay",
-    "Malayalam",
-    "Marathi",
-    "Norwegian",
-    "Polish",
-    "Portuguese (Portugal)",
-    "Romanian",
-    "Russian",
-    "Serbian",
-    "Chinese (PRC)",
-    "Slovak",
-    "Slovenian",
-    "Spanish",
-    "Swahili",
-    "Swedish",
-    "Tamil",
-    "Telugu",
-    "Thai",
-    "Chinese (Taiwan)",
-    "Turkish",
-    "Urdu",
-    "Ukrainian",
-    "Vietnamese",
-    "Welsh"
-]
-
-if "native_lang" not in st.session_state.keys():
-    st.session_state["native_lang"] = "Korean"
-
-if "image_on" not in st.session_state.keys():
-    st.session_state["image_on"] = False
+# if "image_on" not in st.session_state.keys():
+#     st.session_state["image_on"] = False
 
 if "vocab_df" not in st.session_state.keys():
     vocab_df = load_data()
     st.session_state["vocab_df"] = vocab_df
 
+if "lang_options" not in st.session_state.keys():
+    translator = gct.GCTranslateUtils()
+    st.session_state["lang_options"] = translator.get_supported_languages()
+
 if "user_openai_api_key" in st.session_state and "native_lang" in st.session_state:
     os.environ["OPENAI_API_KEY"] = st.session_state["user_openai_api_key"]
-    st.session_state["wordfinder_crew"] = create_wf_crew(st.session_state["user_openai_api_key"], st.session_state["native_lang"])
-    st.session_state["translator_crew"] = create_translator_crew(st.session_state["user_openai_api_key"], )
-   
-
 pages = [
     st.Page("pages/Main.py", title="Main", icon=":material/home:"),
     st.Page("pages/AddWords.py", title="Add New Words", icon=":material/list_alt_add:"),
