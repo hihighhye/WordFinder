@@ -87,7 +87,7 @@ class WordsFinderCrew:
         )
 
         self.example_generator = Agent(
-             role="Generating an example sentence with given word/phrase",
+            role="Generating an example sentence with given word/phrase",
             goal="Generate an example sentence involving given word/phrase so that human can understand how the word is used in sentences.",
             backstory="""
                 You are helping students who are learning English.

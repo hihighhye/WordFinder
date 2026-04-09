@@ -58,7 +58,7 @@ pixabay_api_key = st.secrets["pixabay_api_key"]
 
 translator = gct.GCTranslateUtils()
 
-image_on = st.session_state["image_on"] if "image_on" in st.session_state.keys() else False
+# image_on = st.session_state["image_on"] if "image_on" in st.session_state.keys() else False
 
 today = date.today()
 placeholder = st.empty()
@@ -78,9 +78,6 @@ if submitted and check_validation(cat1, input_words):
         input_words = str_to_list(input_words)
 
         refined_words = input_words
-        # for word in input_words:
-        #     refined_word = wordsfinder_crew.preprocess(word)
-        #     refined_words.append(refined_word)
 
         new_words = [w for w in refined_words if w.lower() not in found_words]
 

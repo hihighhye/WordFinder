@@ -8,6 +8,7 @@ from crews.translator_crew import TranslatorCrew
 import os
 from openai import OpenAI
 import gc_translate_utils as gct
+from langchain.chat_models import ChatOpenAI
 
 
 def test_api_key_validation(openai_api_key):
@@ -37,11 +38,11 @@ def set_up():
         index=default_lang_index,
     )
 
-    image_on = st.toggle(
-        "Visualize words (experimental)", 
-        value=st.session_state["image_on"] if "image_on" in st.session_state else False,
-        disabled=True
-    )
+    # image_on = st.toggle(
+    #     "Visualize words (experimental)", 
+    #     value=st.session_state["image_on"] if "image_on" in st.session_state else False,
+    #     # disabled=True
+    # )
 
     if st.button("save"):
         user_openai_api_key = user_openai_api_key.strip() if user_openai_api_key else None
@@ -51,20 +52,16 @@ def set_up():
         
                 st.session_state["user_openai_api_key"] = user_openai_api_key
                 st.session_state["native_lang_code"] = native_lang_code
-                st.session_state["image_on"] = image_on
+                # st.session_state["image_on"] = image_on
                 st.cache_resource.clear()
                 st.rerun()
             except Exception as e:
                 st.error("Please enter valid OpenAI API key.")
                 st.session_state.pop("user_openai_api_key", None)
-                st.session_state.pop("wordfinder_crew", None)
-                st.session_state.pop("translator_crew", None)
 
         else:
             st.error("Please enter valid OpenAI API key.")
             st.session_state.pop("user_openai_api_key", None)
-            st.session_state.pop("wordfinder_crew", None)
-            st.session_state.pop("translator_crew", None)
 
 # @st.cache_resource(show_spinner="Loading your vocab...")
 # def get_resource():
@@ -103,19 +100,6 @@ def load_data():
         "note", "example", "star", "synonym", "antonym" , "img", "search_date"]
     )
     return vocab_df
-
-@st.cache_resource()
-def create_wf_crew(openai_api_key, native_lang): 
-    wf_crew = WordsFinderCrew(openai_api_key=openai_api_key, native_lang=native_lang)
-    print("Created new WF Crew!")
-    return wf_crew
-
-@st.cache_resource()
-def create_translator_crew(openai_api_key): 
-    t_crew = TranslatorCrew(openai_api_key=openai_api_key)
-    print("Created new Translator Crew!")
-    return t_crew
-
 
 # st.session_state["lang_options"] = [
 #     "Korean",
@@ -178,8 +162,8 @@ def create_translator_crew(openai_api_key):
 if "native_lang_code" not in st.session_state.keys():
     st.session_state["native_lang_code"] = "ko"
 
-if "image_on" not in st.session_state.keys():
-    st.session_state["image_on"] = False
+# if "image_on" not in st.session_state.keys():
+#     st.session_state["image_on"] = False
 
 if "vocab_df" not in st.session_state.keys():
     vocab_df = load_data()
@@ -191,9 +175,6 @@ if "lang_options" not in st.session_state.keys():
 
 if "user_openai_api_key" in st.session_state and "native_lang" in st.session_state:
     os.environ["OPENAI_API_KEY"] = st.session_state["user_openai_api_key"]
-    st.session_state["wordfinder_crew"] = create_wf_crew(st.session_state["user_openai_api_key"], st.session_state["native_lang"])
-    st.session_state["translator_crew"] = create_translator_crew(st.session_state["user_openai_api_key"]) 
-
 pages = [
     st.Page("pages/Main.py", title="Main", icon=":material/home:"),
     st.Page("pages/AddWords.py", title="Add New Words", icon=":material/list_alt_add:"),
