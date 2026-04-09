@@ -23,3 +23,11 @@ google-cloud-resource-manager==1.14.2
 google-cloud-storage==2.19.0
 google-cloud-translate==3.21.1
 google-crc32c==1.7.1
+langchain==0.3.27
+langchain-cohere==0.3.5
+langchain-community==0.3.29
+langchain-core==0.3.76
+langchain-experimental==0.3.4
+langchain-openai==0.2.14
+langchain-text-splitters==0.3.11
+langsmith==0.3.45
