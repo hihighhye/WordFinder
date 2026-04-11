@@ -3,12 +3,9 @@ import database_utils as db
 # from googlesheets_utils import GooglesheetUtils
 from datetime import date
 import pandas as pd
-from crews.wordsfinder_crew import WordsFinderCrew
-from crews.translator_crew import TranslatorCrew
 import os
 from openai import OpenAI
 import gc_translate_utils as gct
-from langchain.chat_models import ChatOpenAI
 
 
 def test_api_key_validation(openai_api_key):
